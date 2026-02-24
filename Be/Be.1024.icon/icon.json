@@ -1,0 +1,181 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "blur-material" : 0.5,
+      "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : {
+                "linear-gradient" : [
+                  "srgb:0.84706,0.70980,1.00000,1.00000",
+                  "srgb:0.53333,0.69412,0.58039,1.00000"
+                ],
+                "orientation" : {
+                  "start" : {
+                    "x" : 0,
+                    "y" : 0
+                  },
+                  "stop" : {
+                    "x" : 1,
+                    "y" : 1
+                  }
+                }
+              }
+            }
+          ],
+          "glass" : false,
+          "image-name" : "3 – Layer.svg",
+          "name" : "3 – Layer",
+          "position" : {
+            "scale" : 1.4,
+            "translation-in-points" : [
+              63.62180780396352,
+              38.80640000000005
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.8
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "blur-material" : 0.5,
+      "layers" : [
+        {
+          "blend-mode-specializations" : [
+            {
+              "value" : "normal"
+            },
+            {
+              "appearance" : "dark",
+              "value" : "normal"
+            }
+          ],
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : {
+                "linear-gradient" : [
+                  "srgb:0.84706,0.70980,1.00000,1.00000",
+                  "srgb:0.53333,0.69412,0.58039,1.00000"
+                ],
+                "orientation" : {
+                  "start" : {
+                    "x" : 0.19073082603877556,
+                    "y" : 0
+                  },
+                  "stop" : {
+                    "x" : 1,
+                    "y" : 1
+                  }
+                }
+              }
+            }
+          ],
+          "glass" : false,
+          "hidden" : false,
+          "image-name" : "2 – Layer.svg",
+          "name" : "2 – Layer",
+          "position" : {
+            "scale" : 1.4,
+            "translation-in-points" : [
+              60.0345921960365,
+              39.13440000000003
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.8
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : {
+                "linear-gradient" : [
+                  "gray:0.20338,1.00000",
+                  "gray:0.09685,1.00000"
+                ],
+                "orientation" : {
+                  "start" : {
+                    "x" : 0.1121140840699125,
+                    "y" : 0.10023354359093933
+                  },
+                  "stop" : {
+                    "x" : 0.9394406841248448,
+                    "y" : 0.9761713177596473
+                  }
+                }
+              }
+            },
+            {
+              "appearance" : "tinted",
+              "value" : {
+                "solid" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+              }
+            }
+          ],
+          "glass" : false,
+          "hidden-specializations" : [
+            {
+              "value" : false
+            },
+            {
+              "appearance" : "dark",
+              "value" : true
+            },
+            {
+              "appearance" : "tinted",
+              "value" : true
+            }
+          ],
+          "image-name" : "Image to Mesh Gradient (10) 1.png",
+          "name" : "Image to Mesh Gradient (10) 1",
+          "position" : {
+            "scale" : 1.1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "name" : "Group",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

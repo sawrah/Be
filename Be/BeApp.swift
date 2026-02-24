@@ -1,15 +1,8 @@
-//
-//  BeApp.swift
-//  Be
-//
-//  Created by Sara amouzesh on 2026-02-06.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
-struct BeApp: App {
+struct BeApp: SwiftUI.App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
