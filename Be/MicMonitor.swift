@@ -15,12 +15,11 @@ class MicMonitor: ObservableObject {
     
     func startMonitoring() {
         let audioSession = AVAudioSession.sharedInstance()
-        let audioApplication = AVAudioApplication.shared
         print("🎤 Starting microphone monitoring...")
-        print("🎤 Current permission: \(audioApplication.recordPermission.rawValue)")
+        print("🎤 Current permission: \(audioSession.recordPermission.rawValue)")
         
-        if audioApplication.recordPermission != .granted {
-            AVAudioApplication.requestRecordPermission { allowed in
+        if audioSession.recordPermission != .granted {
+            audioSession.requestRecordPermission { allowed in
                 print("🎤 Permission requested, allowed: \(allowed)")
                 if allowed {
                     Task { @MainActor [weak self] in
@@ -74,18 +73,23 @@ class MicMonitor: ObservableObject {
     }
     
     func stopMonitoring() {
-        print("🎤 Stopping monitoring")
-        audioRecorder?.stop()
-        audioRecorder = nil
-        timer?.invalidate()
-        timer = nil
+        print("Stopping monitoring")
         
-        // Deactivate audio session
-        let audioSession = AVAudioSession.sharedInstance()
-        try? audioSession.setActive(false)
-        
-        // Reset state
-        soundLevel = 0.0
-        isBlowing = false
+        // Ensure UI state changes and Audio Session teardown happen precisely on the main thread
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.audioRecorder?.stop()
+            self.audioRecorder = nil
+            self.timer?.invalidate()
+            self.timer = nil
+            
+            // Deactivate audio session
+            let audioSession = AVAudioSession.sharedInstance()
+            try? audioSession.setActive(false)
+            
+            // Reset state
+            self.soundLevel = 0.0
+            self.isBlowing = false
+        }
     }
 }
