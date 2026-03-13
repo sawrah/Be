@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import DotLottie
 
 // MARK: - Confetti
 
@@ -63,10 +64,13 @@ struct ContentView: View {
     @State private var shouldGrowPetals = false
     @State private var shouldDropAllPetals = false
     @State private var showSurfaceNotFound = false
+    @State private var surfaceNotFoundAttempts = 0
     @State private var showConfetti = false
 
     @StateObject private var micMonitor = MicMonitor()
     @StateObject private var sessionManager = BreathingSessionManager()
+    
+    private let hapticGenerator = UIImpactFeedbackGenerator(style: .medium)
 
     var body: some View {
         ZStack {
@@ -78,6 +82,7 @@ struct ContentView: View {
                     }
                 },
                 onSurfaceNotFound: {
+                    surfaceNotFoundAttempts += 1
                     showSurfaceNotFound = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                         withAnimation { showSurfaceNotFound = false }
@@ -101,12 +106,13 @@ struct ContentView: View {
             // Surface not found toast
             if showSurfaceNotFound {
                 VStack {
-                    Text("No surface found — point camera at a flat surface")
-                        .font(.system(.subheadline, design: .serif))
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+                    Text(surfaceNotFoundAttempts == 1 
+                        ? "Move your phone slowly to scan the room" 
+                        : "Point out a flat surface like a table or floor")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
                         .padding(.top, 80)
                     Spacer()
                 }
@@ -118,11 +124,9 @@ struct ContentView: View {
                 VStack {
                     Spacer()
                     Text("Try to blow the petals!")
-                        .font(.system(.subheadline, design: .serif).weight(.medium))
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24)
                         .padding(.bottom, 160)
                 }
                 .transition(.opacity.combined(with: .scale))
@@ -148,11 +152,15 @@ struct ContentView: View {
             switch newPhase {
             case .exhale:
                 micMonitor.startMonitoring()
+                // Haptic feedback for exhale (decrease/soft)
+                hapticGenerator.impactOccurred(intensity: 0.6)
             case .inhale:
                 micMonitor.stopMonitoring()
                 
+                // Haptic feedback for inhale (increase/strong)
+                hapticGenerator.impactOccurred(intensity: 1.0)
+                
                 // Only force-drop remaining petals and regrow if this is NOT the very first inhale
-                // (We don't want the flower to shed everything instantly on session start!)
                 if sessionManager.globalSecondsRemaining < sessionManager.totalSessionSeconds {
                     shouldDropAllPetals = true
                     shouldGrowPetals = true
@@ -184,30 +192,51 @@ struct ContentView: View {
             Spacer()
 
             if !isFlowerPlaced {
-                Text("Place the flower on a surface")
-                    .font(.system(.headline, design: .serif).weight(.semibold).italic())
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 12))
-                    .transition(.opacity)
+                VStack(spacing: 0) {
+                    PlacementAnimation(fileName: "animationTap")
+                        .scaleEffect(1.2)
+                        .shadow(color: .white.opacity(0.2), radius: 8)
+                        .offset(y: 5)
+
+                    Text("Place the flower on a flat surface")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 15)
+                .background(.ultraThinMaterial)
+                .environment(\.colorScheme, .dark)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.white.opacity(0.3), .white.opacity(0.1)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.5
+                        )
+                )
+                .shadow(color: .black.opacity(0.2), radius: 15, y: 10)
+                .transition(.opacity)
             } else {
                 Button {
                     startSession()
                 } label: {
                     Text("Start Session")
-                        .font(.system(.headline, design: .serif).weight(.semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 28)
-                        .padding(.vertical, 14)
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 18)
+                        .glassEffect(.regular.tint(Color("BrandGreen")).interactive(), in: .capsule)
                 }
-                .glassEffect(.regular.interactive(), in: .capsule)
-                .tint(Color("BrandGreen"))
-                .transition(.opacity)
+                .environment(\.colorScheme, .dark)
+                .transition(.scale.combined(with: .opacity))
             }
         }
-        .padding(.bottom, 100)
-        .animation(.easeInOut(duration: 0.5), value: isFlowerPlaced)
+        .padding(.bottom, 50)
+        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isFlowerPlaced)
     }
 
     // MARK: - Active Session
@@ -230,17 +259,15 @@ struct ContentView: View {
                 .font(.system(.largeTitle, design: .serif).weight(.semibold))
                 .foregroundStyle(.primary)
 
-            ProgressView(value: sessionManager.phaseProgress)
-                .progressViewStyle(.linear)
-                .tint(sessionManager.phase == .inhale ? Color.primary : Color.secondary)
-                .frame(width: 220)
-
-            Text("\(sessionManager.phaseSecondsLeft)")
-                .font(.system(.subheadline, design: .monospaced))
-                .foregroundStyle(.secondary)
+            BreathingWaveView(
+                sessionElapsed: sessionManager.sessionElapsed,
+                totalDuration: sessionManager.totalSessionDuration,
+                inhaleDuration: sessionManager.inhaleDuration,
+                exhaleDuration: sessionManager.exhaleDuration,
+                phase: sessionManager.phase
+            )
         }
-        .padding(20)
-        .padding(.horizontal, 40)
+        .padding(.vertical, 20)
     }
 
     private var globalControlView: some View {
@@ -249,16 +276,16 @@ struct ContentView: View {
                 sessionManager.togglePause()
             } label: {
                 Image(systemName: sessionManager.isPaused ? "play.fill" : "pause.fill")
-                    .font(.title2)
+                    .font(.title)
                     .foregroundStyle(.white)
-                    .frame(width: 52, height: 52)
+                    .frame(width: 64, height: 64)
+                    .glassEffect(.regular.tint(Color("BrandGreen")).interactive(), in: .circle)
             }
-            .glassEffect(.regular.interactive(), in: .circle)
-            .tint(Color("BrandGreen"))
+            .environment(\.colorScheme, .dark)
 
             Text(sessionManager.globalTimerText)
-                .font(.system(.footnote, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .font(.system(.subheadline, design: .monospaced).weight(.semibold))
+                .foregroundStyle(.primary)
         }
     }
 
@@ -276,13 +303,13 @@ struct ContentView: View {
                     addToGarden()
                 } label: {
                     Text("Add to Garden")
-                        .font(.system(.headline, design: .serif).weight(.semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 28)
-                        .padding(.vertical, 14)
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 18)
+                        .glassEffect(.regular.tint(Color("BrandGreen")).interactive(), in: .capsule)
                 }
-                .glassEffect(.regular.interactive(), in: .capsule)
-                .tint(Color("BrandGreen"))
+                .environment(\.colorScheme, .dark)
             }
             .padding(.bottom, 100)
         }
@@ -294,6 +321,7 @@ struct ContentView: View {
         withAnimation(.easeIn(duration: 0.4)) {
             isSessionActive = true
         }
+        hapticGenerator.prepare()
         sessionManager.startSession()
     }
 
@@ -303,6 +331,17 @@ struct ContentView: View {
             isSessionActive = false
             showConfetti = false
         }
+    }
+}
+
+struct PlacementAnimation: View {
+    let fileName: String
+    var body: some View {
+        DotLottieAnimation(
+            fileName: fileName,
+            config: AnimationConfig(autoplay: true, loop: true)
+        ).view()
+        .frame(width: 80, height: 80)
     }
 }
 

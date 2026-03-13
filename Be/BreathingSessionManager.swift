@@ -15,12 +15,15 @@ class BreathingSessionManager: ObservableObject {
     @Published var phaseElapsed: Double = 0.0
     @Published var isPaused: Bool = false
     @Published var showBlowHint: Bool = false
+    @Published var sessionElapsed: Double = 0.0
 
     var userBlewDuringExhale = false
 
     let inhaleDuration: Double = 4.0
     let exhaleDuration: Double = 8.0
     let totalSessionSeconds: Int = 60
+    var totalSessionDuration: Double { Double(totalSessionSeconds) }
+    var cycleDuration: Double { inhaleDuration + exhaleDuration }
 
     var phaseDuration: Double {
         switch phase {
@@ -53,6 +56,7 @@ class BreathingSessionManager: ObservableObject {
         globalSecondsRemaining = totalSessionSeconds
         isPaused = false
         showBlowHint = false
+        sessionElapsed = 0.0
         userBlewDuringExhale = false
         beginPhase(.inhale)
         startGlobalTimer()
@@ -110,6 +114,7 @@ class BreathingSessionManager: ObservableObject {
             Task { @MainActor in
                 guard let self = self, !self.isPaused else { return }
                 self.phaseElapsed += 0.1
+                self.sessionElapsed += 0.1
                 if self.phaseElapsed >= self.phaseDuration {
                     self.advancePhase()
                 }
