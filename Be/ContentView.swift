@@ -55,6 +55,8 @@ struct ConfettiView: View {
 // MARK: - Content View
 
 struct ContentView: View {
+    var onAddToGarden: (() -> Void)?
+
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
 
@@ -69,8 +71,9 @@ struct ContentView: View {
 
     @StateObject private var micMonitor = MicMonitor()
     @StateObject private var sessionManager = BreathingSessionManager()
-    
-    private let hapticGenerator = UIImpactFeedbackGenerator(style: .medium)
+
+    @State private var inhaleCount = 0
+    @State private var exhaleCount = 0
 
     var body: some View {
         ZStack {
@@ -138,6 +141,8 @@ struct ContentView: View {
                 ConfettiView()
             }
         }
+        .sensoryFeedback(.increase, trigger: inhaleCount)
+        .sensoryFeedback(.decrease, trigger: exhaleCount)
         .onChange(of: micMonitor.isBlowing) { newValue in
             guard isSessionActive,
                   sessionManager.phase == .exhale,
@@ -152,13 +157,10 @@ struct ContentView: View {
             switch newPhase {
             case .exhale:
                 micMonitor.startMonitoring()
-                // Haptic feedback for exhale (decrease/soft)
-                hapticGenerator.impactOccurred(intensity: 0.6)
+                exhaleCount += 1
             case .inhale:
                 micMonitor.stopMonitoring()
-                
-                // Haptic feedback for inhale (increase/strong)
-                hapticGenerator.impactOccurred(intensity: 1.0)
+                inhaleCount += 1
                 
                 // Only force-drop remaining petals and regrow if this is NOT the very first inhale
                 if sessionManager.globalSecondsRemaining < sessionManager.totalSessionSeconds {
@@ -321,16 +323,15 @@ struct ContentView: View {
         withAnimation(.easeIn(duration: 0.4)) {
             isSessionActive = true
         }
-        hapticGenerator.prepare()
         sessionManager.startSession()
     }
 
     private func addToGarden() {
-        // TODO: Implement garden collection feature
         withAnimation(.easeOut(duration: 0.4)) {
             isSessionActive = false
             showConfetti = false
         }
+        onAddToGarden?()
     }
 }
 
