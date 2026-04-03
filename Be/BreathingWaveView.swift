@@ -8,7 +8,7 @@ struct BreathingWaveView: View {
     let phase: BreathingPhase
 
     private let amplitude: CGFloat = 56.0
-    private let pointsPerSecond: CGFloat = 25.0
+    private let pointsPerSecond: CGFloat = 30.0
     private let dotRadius: CGFloat = 8.0
     private let strokeWidth: CGFloat = 8.0
     private let timeStep: Double = 0.05
