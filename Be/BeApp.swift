@@ -3,6 +3,8 @@ import SwiftData
 
 @main
 struct BeApp: SwiftUI.App {
+    @StateObject private var authManager = AuthManager()
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -18,7 +20,14 @@ struct BeApp: SwiftUI.App {
 
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            Group {
+                if authManager.isSignedIn {
+                    HomeView()
+                } else {
+                    SplashView()
+                }
+            }
+            .environmentObject(authManager)
         }
         .modelContainer(sharedModelContainer)
     }

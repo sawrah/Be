@@ -52,9 +52,9 @@ struct ConfettiView: View {
     }
 }
 
-// MARK: - Content View
+// MARK: - Breathing Session View
 
-struct ContentView: View {
+struct BreathingSessionView: View {
     var onAddToGarden: (() -> Void)?
 
     @Environment(\.modelContext) private var modelContext
@@ -347,5 +347,5 @@ struct PlacementAnimation: View {
 }
 
 #Preview {
-    ContentView()
+    BreathingSessionView()
 }

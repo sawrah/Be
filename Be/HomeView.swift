@@ -2,9 +2,11 @@ import SwiftUI
 import SwiftData
 
 struct HomeView: View {
+    @EnvironmentObject var authManager: AuthManager
     @State private var showBreathingSession = false
     @State private var selectedDate = Date()
     @State private var isPlantingMode = false
+    @State private var showMonthPicker = false
 
     private var selectedMonth: Int { Calendar.current.component(.month, from: selectedDate) }
     private var selectedYear: Int { Calendar.current.component(.year, from: selectedDate) }
@@ -21,12 +23,12 @@ struct HomeView: View {
                     Image("BeBG")
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: geo.size.width, height: geo.size.height / 1.7)
+                        .frame(width: geo.size.width, height: geo.size.height / 1.8)
                         .clipped()
                         .mask(
                             LinearGradient(
                                 gradient: Gradient(stops: [
-                                    .init(color: .black, location: 0.6),
+                                    .init(color: .black, location: 0.75),
                                     .init(color: .clear, location: 1.0)
                                 ]),
                                 startPoint: .top,
@@ -40,35 +42,44 @@ struct HomeView: View {
             }
             
             // UI Overlay
-            VStack(spacing: 0) {
-                // Top Bar
-                HStack {
-                    Spacer()
-                    
-                    Image("Logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 50)
-                    
-                    Spacer()
-                    
-                    Menu {
-                        Button(role: .destructive) {
-                            // Sign Out action
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Top Bar
+                    HStack {
+                        // Left spacer to balance the menu button
+                        Spacer()
+                            .frame(width: 48) // Matches the menu button width
+                        
+                        Spacer()
+                        
+                        Image("Logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 50)
+                        
+                        Spacer()
+                        
+                        Menu {
+                            if let name = authManager.displayName {
+                                Text(name)
+                            }
+                            Button(role: .destructive) {
+                                authManager.signOut()
+                            } label: {
+                                Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                            }
                         } label: {
-                            Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.white)
+                                .frame(width: 48) // Fixed width for centering
                         }
-                    } label: {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(.white)
-                            .padding(.trailing, 24)
                     }
-                }
-                .padding(.top, 16)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 4)
                 
                 Spacer()
-                    .frame(height: 40)
+                    .frame(height: 30)
                 
                 // Huge BrandGreen Button
                 Button {
@@ -91,34 +102,37 @@ struct HomeView: View {
                 }
                 
                 Spacer()
-                    .frame(height: 60)
+                    .frame(height: 40)
                 
                 // Insights Row
                 HStack(spacing: 0) {
                     VStack(spacing: 4) {
                         Text("20")
                             .font(.system(.headline, design: .serif).weight(.regular))
+                            .foregroundColor(.black)
                         Text("Total breathing")
                             .font(.footnote)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.black.opacity(0.6))
                     }
                     .frame(maxWidth: .infinity)
                     
                     VStack(spacing: 4) {
                         Text("10m")
                             .font(.system(.headline, design: .serif).weight(.regular))
+                            .foregroundColor(.black)
                         Text("Total time")
                             .font(.footnote)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.black.opacity(0.6))
                     }
                     .frame(maxWidth: .infinity)
                     
                     VStack(spacing: 4) {
                         Text("20")
                             .font(.system(.headline, design: .serif).weight(.regular))
-                        Text("exercises")
+                            .foregroundColor(.black)
+                        Text("Exercises")
                             .font(.footnote)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.black.opacity(0.6))
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -129,7 +143,7 @@ struct HomeView: View {
                 .padding(.horizontal, 24)
                 
                 Spacer()
-                    .frame(height: 40)
+                    .frame(height: 30)
                 
                 // Month Picker Row
                 HStack(spacing: 40) {
@@ -141,20 +155,19 @@ struct HomeView: View {
                             .foregroundColor(.black)
                     }
 
-                    ZStack {
-                        Capsule()
-                            .fill(Color("Surface").opacity(0.8))
-                            .frame(width: 140, height: 36)
+                    Button(action: {
+                        showMonthPicker = true
+                    }) {
+                        ZStack {
+                            Capsule()
+                                .fill(Color("Surface").opacity(0.8))
+                                .frame(width: 140, height: 36)
 
-                        Text(selectedDate, format: .dateTime.month(.abbreviated).year())
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.black)
-
-                        DatePicker("", selection: $selectedDate, displayedComponents: .date)
-                            .labelsHidden()
-                            .blendMode(.destinationOver)
-                            .opacity(0.01)
+                            Text(selectedDate, format: .dateTime.month(.abbreviated).year())
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.black)
+                        }
                     }
 
                     Button(action: {
@@ -187,13 +200,92 @@ struct HomeView: View {
                 }
 
                 Spacer()
+                    .frame(height: 40)
+                }
             }
         }
         .fullScreenCover(isPresented: $showBreathingSession) {
-            ContentView(onAddToGarden: {
+            BreathingSessionView(onAddToGarden: {
                 showBreathingSession = false
                 isPlantingMode = true
             })
+        }
+        .sheet(isPresented: $showMonthPicker) {
+            MonthPickerView(selectedDate: $selectedDate, isPresented: $showMonthPicker)
+                .presentationDetents([.height(250)])
+                .presentationDragIndicator(.visible)
+        }
+    }
+}
+
+struct MonthPickerView: View {
+    @Binding var selectedDate: Date
+    @Binding var isPresented: Bool
+    
+    @State private var selectedMonth: Int
+    @State private var selectedYear: Int
+    
+    private let months = Calendar.current.monthSymbols
+    private let years: [Int]
+    
+    init(selectedDate: Binding<Date>, isPresented: Binding<Bool>) {
+        self._selectedDate = selectedDate
+        self._isPresented = isPresented
+        
+        let currentYear = Calendar.current.component(.year, from: Date())
+        self.years = Array((currentYear - 5)...(currentYear + 5))
+        
+        let month = Calendar.current.component(.month, from: selectedDate.wrappedValue)
+        let year = Calendar.current.component(.year, from: selectedDate.wrappedValue)
+        self._selectedMonth = State(initialValue: month)
+        self._selectedYear = State(initialValue: year)
+    }
+    
+    var body: some View {
+        VStack(spacing: 10) {
+            Text("Select Month")
+                .font(.headline)
+                .padding(.top, 20)
+            
+            HStack(spacing: 0) {
+                // Month Picker
+                Picker("Month", selection: $selectedMonth) {
+                    ForEach(1...12, id: \.self) { month in
+                        Text(months[month - 1])
+                            .tag(month)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(width: 150)
+                
+                // Year Picker
+                Picker("Year", selection: $selectedYear) {
+                    ForEach(years, id: \.self) { year in
+                        Text(String(year))
+                            .tag(year)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(width: 100)
+            }
+            .frame(height: 160)
+            
+            Button("Done") {
+                updateDate()
+                isPresented = false
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color("BrandGreen"))
+        }
+    }
+    
+    private func updateDate() {
+        var components = DateComponents()
+        components.year = selectedYear
+        components.month = selectedMonth
+        components.day = 1
+        if let newDate = Calendar.current.date(from: components) {
+            selectedDate = newDate
         }
     }
 }
