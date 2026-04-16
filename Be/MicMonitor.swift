@@ -36,9 +36,8 @@ class MicMonitor: ObservableObject {
         let audioSession = AVAudioSession.sharedInstance()
         
         do {
-            // Note: iOS disables haptics during audio recording to prevent vibration interference
-            // There is no AVAudioSession option to override this behavior
-            try audioSession.setCategory(.playAndRecord, mode: .measurement, options: [.duckOthers])
+            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)  // ← add this
             try audioSession.setActive(true)
             
             let url = URL(fileURLWithPath: "/dev/null", isDirectory: false)

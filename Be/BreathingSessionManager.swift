@@ -20,7 +20,7 @@ class BreathingSessionManager: ObservableObject {
     var userBlewDuringExhale = false
 
     let inhaleDuration: Double = 4.0
-    let exhaleDuration: Double = 8.0
+    let exhaleDuration: Double = 6.0
     let totalSessionSeconds: Int = 60
     var totalSessionDuration: Double { Double(totalSessionSeconds) }
     var cycleDuration: Double { inhaleDuration + exhaleDuration }
@@ -76,6 +76,21 @@ class BreathingSessionManager: ObservableObject {
         phaseTimer?.invalidate()
         phaseTimer = nil
         phase = .finished
+        
+        // Record successful session
+        BreathingStats.recordSession()
+    }
+
+    func cancelSession() {
+        globalTimer?.invalidate()
+        globalTimer = nil
+        phaseTimer?.invalidate()
+        phaseTimer = nil
+        phase = .idle
+        globalSecondsRemaining = totalSessionSeconds
+        phaseElapsed = 0
+        sessionElapsed = 0
+        isPaused = false
     }
 
     // MARK: - Private

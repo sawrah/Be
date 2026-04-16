@@ -57,6 +57,7 @@ struct ConfettiView: View {
 struct BreathingSessionView: View {
     var onAddToGarden: (() -> Void)?
 
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
 
@@ -68,6 +69,7 @@ struct BreathingSessionView: View {
     @State private var showSurfaceNotFound = false
     @State private var surfaceNotFoundAttempts = 0
     @State private var showConfetti = false
+    @State private var showCancelConfirmation = false
 
     @StateObject private var micMonitor = MicMonitor()
     @StateObject private var sessionManager = BreathingSessionManager()
@@ -133,16 +135,66 @@ struct BreathingSessionView: View {
                         .padding(.bottom, 160)
                 }
                 .transition(.opacity.combined(with: .scale))
-                .animation(.easeInOut(duration: 0.3), value: sessionManager.showBlowHint)
+                .animation(.easeInOut(duration: 6), value: sessionManager.showBlowHint)
             }
 
             // Confetti overlay
             if showConfetti {
                 ConfettiView()
             }
+
+            // Back / cancel button — top-left, always visible
+            if sessionManager.phase != .finished {
+                VStack {
+                    HStack {
+                        Button {
+                            if isSessionActive {
+                                sessionManager.togglePause()
+                                showCancelConfirmation = true
+                            } else {
+                                dismiss()
+                            }
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .glassEffect(.regular.interactive(), in: .circle)
+                        }
+                        .environment(\.colorScheme, .dark)
+                        .padding(.leading, 20)
+                        .padding(.top, 56)
+                        Spacer()
+                    }
+                    Spacer()
+                }
+            }
         }
-        .sensoryFeedback(.increase, trigger: inhaleCount)
-        .sensoryFeedback(.decrease, trigger: exhaleCount)
+        .confirmationDialog(
+            "End session?",
+            isPresented: $showCancelConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("End Session", role: .destructive) {
+                micMonitor.stopMonitoring()
+                sessionManager.cancelSession()
+                withAnimation(.easeOut(duration: 0.3)) {
+                    isSessionActive = false
+                    showConfetti = false
+                }
+                dismiss()
+            }
+            Button("Keep Going") {
+                sessionManager.togglePause() // resume
+            }
+            Button("Cancel", role: .cancel) {
+                sessionManager.togglePause() // resume
+            }
+        } message: {
+            Text("Your progress won't be saved.")
+        }
+        .sensoryFeedback(.impact(weight: .heavy, intensity: 1.0), trigger: inhaleCount)
+        .sensoryFeedback(.impact(weight: .heavy, intensity: 1.0), trigger: exhaleCount)
         .onChange(of: micMonitor.isBlowing) { newValue in
             guard isSessionActive,
                   sessionManager.phase == .exhale,
@@ -257,10 +309,13 @@ struct BreathingSessionView: View {
 
     private var phaseMonitorView: some View {
         VStack(spacing: 12) {
-            Text(sessionManager.phase == .inhale ? "Inhale" : "Exhale")
-                .font(.system(.largeTitle, design: .serif).weight(.semibold))
-                .foregroundStyle(.primary)
-
+            PhaseLabelView(
+                phase: sessionManager.phase,
+                inhaleDuration: sessionManager.inhaleDuration,
+                exhaleDuration: sessionManager.exhaleDuration
+            )
+            .id(sessionManager.phase) // ← forces full re-create on phase change, re-triggering onAppear
+            
             BreathingWaveView(
                 sessionElapsed: sessionManager.sessionElapsed,
                 totalDuration: sessionManager.totalSessionDuration,
@@ -287,33 +342,59 @@ struct BreathingSessionView: View {
 
             Text(sessionManager.globalTimerText)
                 .font(.system(.subheadline, design: .monospaced).weight(.semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
         }
     }
 
     // MARK: - Finished
 
     private var sessionFinishedOverlay: some View {
-        VStack {
-            Spacer()
-            VStack(spacing: 16) {
-                Text("You did it!")
-                    .font(.system(.largeTitle, design: .serif).weight(.bold))
-                    .foregroundStyle(.primary)
-
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .transition(.opacity)
+            
+            // Animation Centered
+            SinglePlayAnimation(
+                fileName: "breathing-successful", 
+                size: 300,
+                segments: (0, 89)
+            )
+            .shadow(color: Color("BrandGreen").opacity(0.3), radius: 20)
+            .offset(y: -50) // Shift slightly up to balance with bottom text
+            
+            VStack {
+                Spacer()
+                
+                // Grouped Text and Button at the bottom
+                VStack(spacing: 12) {
+                    Text("You did it!")
+                        .font(.system(size: 36, weight: .bold, design: .serif))
+                        .foregroundStyle(.white)
+                    
+                    Text("Now you can plant this flower in your digital garden")
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                        .lineSpacing(4)
+                }
+                .padding(.bottom, 25)
+                
                 Button {
                     addToGarden()
                 } label: {
                     Text("Add to Garden")
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 40)
+                        .padding(.horizontal, 44)
                         .padding(.vertical, 18)
                         .glassEffect(.regular.tint(Color("BrandGreen")).interactive(), in: .capsule)
                 }
                 .environment(\.colorScheme, .dark)
+                .padding(.bottom, 60)
             }
-            .padding(.bottom, 100)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
 
@@ -337,12 +418,37 @@ struct BreathingSessionView: View {
 
 struct PlacementAnimation: View {
     let fileName: String
+    var size: CGFloat = 80
+    var segments: (Float, Float)? = nil
+    
     var body: some View {
         DotLottieAnimation(
             fileName: fileName,
-            config: AnimationConfig(autoplay: true, loop: true)
+            config: AnimationConfig(
+                autoplay: true, 
+                loop: true,
+                segments: segments
+            )
         ).view()
-        .frame(width: 80, height: 80)
+        .frame(width: size, height: size)
+    }
+}
+
+struct SinglePlayAnimation: View {
+    let fileName: String
+    var size: CGFloat = 80
+    var segments: (Float, Float)? = nil
+    
+    var body: some View {
+        DotLottieAnimation(
+            fileName: fileName,
+            config: AnimationConfig(
+                autoplay: true, 
+                loop: false,
+                segments: segments
+            )
+        ).view()
+        .frame(width: size, height: size)
     }
 }
 

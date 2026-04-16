@@ -37,11 +37,12 @@ struct GardenView: View {
                 IsometricTileView(theme: theme, origin: tile.origin)
             }
 
-            // Flowers
+            // Flowers — frame is 90×120, bottom-anchored at topCenter
+            // position() centers the frame, so shift up by half height (60) to bottom-anchor
             ForEach(tiles.filter { plantedIds.contains($0.id) }) { tile in
-                FlowerView()
-                    .position(tile.topCenter)
-                    .transition(.scale)
+                SceneFlowerView()
+                    .position(x: tile.topCenter.x, y: tile.topCenter.y - 60)
+                    .transition(.scale(scale: 0, anchor: .bottom))
             }
 
             // Tap overlay when planting

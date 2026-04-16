@@ -29,14 +29,25 @@ struct SplashView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: logoWidth)
+                
+                Text("Simple breathing exercises.\n A space to come back to yourself.")
+                    .font(.callout)
+                    .italic()
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .opacity(showSignIn ? 1 : 0)
+                
                 Spacer()
+                
+                
+                
             }
             .offset(y: logoOffsetY)
 
             // Sign-in content — slides up from bottom after exhale
             VStack(spacing: 0) {
                 Spacer()
-
+                
                 Image("line-art meditating")
                     .resizable()
                     .scaledToFit()

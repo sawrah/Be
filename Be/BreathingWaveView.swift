@@ -108,7 +108,7 @@ struct BreathingWaveView: View {
                 with: .color(Color("Surface"))
             )
         }
-        .frame(height: amplitude * 2 + dotRadius * 2 + 16)
+        .frame(height: amplitude * 2 + dotRadius * 2 + 48)
         .padding(.horizontal, 16)
         .clipped()
     }
