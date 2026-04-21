@@ -4,6 +4,7 @@ import AuthenticationServices
 
 class AuthManager: ObservableObject {
     @Published var isSignedIn: Bool = false
+    @Published var showOnboarding: Bool = false
     @Published var userID: String?
     @Published var displayName: String?
 

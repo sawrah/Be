@@ -60,7 +60,7 @@ struct SplashView: View {
                     VStack(spacing: 14) {
                         // TODO: Replace with SignInWithAppleButton when developer account is set up
                         Button {
-                            authManager.continueWithoutAuth()
+                            authManager.showOnboarding = true
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "applelogo")

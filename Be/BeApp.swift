@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct BeApp: SwiftUI.App {
     @StateObject private var authManager = AuthManager()
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -23,6 +24,8 @@ struct BeApp: SwiftUI.App {
             Group {
                 if authManager.isSignedIn {
                     HomeView()
+                } else if authManager.showOnboarding {
+                    OnboardingView()
                 } else {
                     SplashView()
                 }
