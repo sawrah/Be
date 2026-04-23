@@ -5,19 +5,21 @@ struct GardenView: View {
     let year: Int
     @Binding var isPlantingMode: Bool
     var onTilePlanted: ((Int) -> Void)?
+    var onSwipe: ((Int) -> Void)?
 
     @State private var tiles: [GardenTile] = []
     @State private var plantedIds: Set<Int> = []
 
     private var theme: TileTheme { TileTheme.forMonth(month) }
 
+    private var isLeapYear: Bool {
+        (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
+    }
+
     private var daysInMonth: Int {
-        let comps = DateComponents(year: year, month: month)
-        let cal = Calendar.current
-        guard let date = cal.date(from: comps),
-              let range = cal.range(of: .day, in: .month, for: date)
-        else { return 30 }
-        return range.count
+        let days = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        guard month >= 1, month <= 12 else { return 30 }
+        return days[month - 1]
     }
 
     // Total garden size for the Canvas
@@ -62,6 +64,17 @@ struct GardenView: View {
                     .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isPlantingMode)
             }
         }
+        .gesture(
+            DragGesture(minimumDistance: 40, coordinateSpace: .local)
+                .onEnded { value in
+                    guard !isPlantingMode else { return }
+                    if value.translation.width < -40 {
+                        onSwipe?(1)
+                    } else if value.translation.width > 40 {
+                        onSwipe?(-1)
+                    }
+                }
+        )
         .onAppear { reload() }
         .onChange(of: month) { _ in reload() }
         .onChange(of: year) { _ in reload() }

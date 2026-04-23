@@ -13,8 +13,19 @@ struct HomeView: View {
     @State private var totalMinutes = BreathingStats.totalCalmMinutes()
     @State private var streak = BreathingStats.currentStreak()
     
-    private var selectedMonth: Int { Calendar.current.component(.month, from: selectedDate) }
-    private var selectedYear: Int { Calendar.current.component(.year, from: selectedDate) }
+    private let gregorian = Calendar(identifier: .gregorian)
+    private var selectedMonth: Int { gregorian.component(.month, from: selectedDate) }
+    private var selectedYear: Int { gregorian.component(.year, from: selectedDate) }
+
+    private static let monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ]
+    private var selectedMonthName: String { Self.monthNames[selectedMonth - 1] }
+
+    private func shiftMonth(by delta: Int) {
+        selectedDate = gregorian.date(byAdding: .month, value: delta, to: selectedDate) ?? selectedDate
+    }
     
     var body: some View {
         ZStack {
@@ -156,9 +167,7 @@ struct HomeView: View {
                         
                         // Month Picker Row
                         HStack(spacing: 40) {
-                            Button(action: {
-                                selectedDate = Calendar.current.date(byAdding: .month, value: -1, to: selectedDate) ?? selectedDate
-                            }) {
+                            Button(action: { shiftMonth(by: -1) }) {
                                 Image(systemName: "chevron.left")
                                     .font(.system(size: 20, weight: .semibold))
                                     .foregroundColor(.black)
@@ -172,16 +181,14 @@ struct HomeView: View {
                                         .fill(Color("Surface").opacity(0.8))
                                         .frame(width: 140, height: 36)
                                     
-                                    Text(selectedDate, format: .dateTime.month(.abbreviated).year())
+                                    Text("\(selectedMonthName) \(String(selectedYear))")
                                         .font(.subheadline)
                                         .fontWeight(.medium)
                                         .foregroundColor(.black)
                                 }
                             }
                             
-                            Button(action: {
-                                selectedDate = Calendar.current.date(byAdding: .month, value: 1, to: selectedDate) ?? selectedDate
-                            }) {
+                            Button(action: { shiftMonth(by: 1) }) {
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 20, weight: .semibold))
                                     .foregroundColor(.black)
@@ -191,16 +198,19 @@ struct HomeView: View {
                         Spacer()
                             .frame(height: 24)
                         
-                        // Garden
+                        // Garden — Color.clear gives scrollTo an anchor without affecting layout
+                        Color.clear.frame(height: 0).id("gardenSection")
+
                         GardenView(
                             month: selectedMonth,
                             year: selectedYear,
                             isPlantingMode: $isPlantingMode,
                             onTilePlanted: { tileId in
                                 GardenPersistence.save(tileId: tileId, month: selectedMonth, year: selectedYear)
-                            }
+                            },
+                            onSwipe: { delta in shiftMonth(by: delta) }
                         )
-                        .id("gardenSection")
+                        .id("\(selectedMonth)-\(selectedYear)")
                         
                         if isPlantingMode {
                             Text("Tap a tile to plant your flower")
@@ -257,18 +267,21 @@ struct MonthPickerView: View {
     @State private var selectedMonth: Int
     @State private var selectedYear: Int
     
-    private let months = Calendar.current.monthSymbols
+    private let gregorian = Calendar(identifier: .gregorian)
+    private let months = ["January", "February", "March", "April", "May", "June",
+                          "July", "August", "September", "October", "November", "December"]
     private let years: [Int]
-    
+
     init(selectedDate: Binding<Date>, isPresented: Binding<Bool>) {
         self._selectedDate = selectedDate
         self._isPresented = isPresented
-        
-        let currentYear = Calendar.current.component(.year, from: Date())
+
+        let cal = Calendar(identifier: .gregorian)
+        let currentYear = cal.component(.year, from: Date())
         self.years = Array((currentYear - 5)...(currentYear + 5))
-        
-        let month = Calendar.current.component(.month, from: selectedDate.wrappedValue)
-        let year = Calendar.current.component(.year, from: selectedDate.wrappedValue)
+
+        let month = cal.component(.month, from: selectedDate.wrappedValue)
+        let year = cal.component(.year, from: selectedDate.wrappedValue)
         self._selectedMonth = State(initialValue: month)
         self._selectedYear = State(initialValue: year)
     }
@@ -316,7 +329,7 @@ struct MonthPickerView: View {
         components.year = selectedYear
         components.month = selectedMonth
         components.day = 1
-        if let newDate = Calendar.current.date(from: components) {
+        if let newDate = gregorian.date(from: components) {
             selectedDate = newDate
         }
     }

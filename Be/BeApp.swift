@@ -22,14 +22,20 @@ struct BeApp: SwiftUI.App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if authManager.isSignedIn {
+                if authManager.hasFinishedSplash && authManager.isSignedIn {
                     HomeView()
+                        .transition(.opacity)
                 } else if authManager.showOnboarding {
                     OnboardingView()
+                        .transition(.opacity)
                 } else {
                     SplashView()
+                        .transition(.opacity)
                 }
             }
+            .animation(.easeInOut(duration: 0.5), value: authManager.hasFinishedSplash)
+            .animation(.easeInOut(duration: 0.5), value: authManager.isSignedIn)
+            .animation(.easeInOut(duration: 0.5), value: authManager.showOnboarding)
             .environmentObject(authManager)
         }
         .modelContainer(sharedModelContainer)

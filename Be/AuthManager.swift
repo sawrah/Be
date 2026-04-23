@@ -5,6 +5,7 @@ import AuthenticationServices
 class AuthManager: ObservableObject {
     @Published var isSignedIn: Bool = false
     @Published var showOnboarding: Bool = false
+    @Published var hasFinishedSplash: Bool = false
     @Published var userID: String?
     @Published var displayName: String?
 
@@ -49,6 +50,7 @@ class AuthManager: ObservableObject {
         UserDefaults.standard.removeObject(forKey: displayNameKey)
         userID = nil
         displayName = nil
+        hasFinishedSplash = false
         isSignedIn = false
     }
 }

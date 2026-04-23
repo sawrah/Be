@@ -93,16 +93,26 @@ struct SplashView: View {
     private func startBreathingAnimation() {
         // 1. Rest for 1.2s
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            // 2. Inhale — logo drifts slightly down
-            withAnimation(.easeIn(duration: 0.4)) { phase = .inhale }
+            if authManager.isSignedIn {
+                // If signed in, fade out to homepage before any movement animation starts
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    authManager.hasFinishedSplash = true
+                }
+            } else {
+                // 2. Inhale — logo drifts slightly down
+                withAnimation(.easeIn(duration: 0.4)) { phase = .inhale }
 
-            // 3. Exhale — logo rises to top, orbs shift up
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                withAnimation(.easeInOut(duration: 0.9)) { phase = .exhaled }
-
-                // 4. Reveal illustration + sign-in button
+                // 3. Exhale — logo rises to top, orbs shift up
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                    withAnimation(.easeOut(duration: 0.5)) { showSignIn = true }
+                    withAnimation(.easeInOut(duration: 0.9)) { phase = .exhaled }
+
+                    // 4. Reveal illustration + sign-in button
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        withAnimation(.easeOut(duration: 0.5)) {
+                            showSignIn = true
+                            authManager.hasFinishedSplash = true
+                        }
+                    }
                 }
             }
         }
