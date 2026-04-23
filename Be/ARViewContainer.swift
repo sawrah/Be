@@ -29,12 +29,14 @@ struct ARViewContainer: UIViewRepresentable {
         arView.addGestureRecognizer(tapGesture)
 
         let pinchGesture = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePinch(_:)))
+        pinchGesture.delegate = context.coordinator
         arView.addGestureRecognizer(pinchGesture)
 
         let panGesture = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
         arView.addGestureRecognizer(panGesture)
 
         let rotationGesture = UIRotationGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleRotation(_:)))
+        rotationGesture.delegate = context.coordinator
         arView.addGestureRecognizer(rotationGesture)
 
         return arView
@@ -62,7 +64,13 @@ struct ARViewContainer: UIViewRepresentable {
 
     // MARK: - Coordinator
 
-    class Coordinator: NSObject, ARSessionDelegate {
+    class Coordinator: NSObject, ARSessionDelegate, UIGestureRecognizerDelegate {
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            return (gestureRecognizer is UIPinchGestureRecognizer && other is UIRotationGestureRecognizer)
+                || (gestureRecognizer is UIRotationGestureRecognizer && other is UIPinchGestureRecognizer)
+        }
         weak var arView: ARView?
 
         var selectedEntity: Entity?
@@ -213,10 +221,17 @@ struct ARViewContainer: UIViewRepresentable {
             }
 
             modelEntity.scale = [0.07, 0.07, 0.07]
-            modelEntity.position = [0, 0, 0] // Ensure centered on anchor
+            modelEntity.position = [0, 0, 0]
 
-            let angle = Float(40.0) * (.pi / 180)
-            modelEntity.orientation = simd_quatf(angle: angle, axis: [0, 1, 0])
+            let faceAngle: Float
+            if let frame = arView.session.currentFrame {
+                let cam = frame.camera.transform.columns.3
+                let pos = firstResult.worldTransform.columns.3
+                faceAngle = atan2(cam.x - pos.x, cam.z - pos.z)
+            } else {
+                faceAngle = Float(40.0) * (.pi / 180)
+            }
+            modelEntity.orientation = simd_quatf(angle: faceAngle, axis: [0, 1, 0])
 
             func addCollision(to entity: Entity) {
                 if let model = entity as? ModelEntity {

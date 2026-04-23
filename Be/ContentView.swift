@@ -80,24 +80,45 @@ struct BreathingSessionView: View {
     var body: some View {
         ZStack {
             // AR layer
-            ARViewContainer(
-                onPlaced: {
-                    withAnimation(.easeOut(duration: 0.5)) {
-                        isFlowerPlaced = true
-                    }
-                },
-                onSurfaceNotFound: {
-                    surfaceNotFoundAttempts += 1
-                    showSurfaceNotFound = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                        withAnimation { showSurfaceNotFound = false }
-                    }
-                },
-                shouldDropPetals: $shouldDropPetals,
-                shouldGrowPetals: $shouldGrowPetals,
-                shouldDropAllPetals: $shouldDropAllPetals
-            )
-            .edgesIgnoringSafeArea(.all)
+            if Capability.backend == .realityKit {
+                ARViewContainer(
+                    onPlaced: {
+                        withAnimation(.easeOut(duration: 0.5)) {
+                            isFlowerPlaced = true
+                        }
+                    },
+                    onSurfaceNotFound: {
+                        surfaceNotFoundAttempts += 1
+                        showSurfaceNotFound = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            withAnimation { showSurfaceNotFound = false }
+                        }
+                    },
+                    shouldDropPetals: $shouldDropPetals,
+                    shouldGrowPetals: $shouldGrowPetals,
+                    shouldDropAllPetals: $shouldDropAllPetals
+                )
+                .edgesIgnoringSafeArea(.all)
+            } else {
+                SceneKitARContainer(
+                    onPlaced: {
+                        withAnimation(.easeOut(duration: 0.5)) {
+                            isFlowerPlaced = true
+                        }
+                    },
+                    onSurfaceNotFound: {
+                        surfaceNotFoundAttempts += 1
+                        showSurfaceNotFound = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            withAnimation { showSurfaceNotFound = false }
+                        }
+                    },
+                    shouldDropPetals: $shouldDropPetals,
+                    shouldGrowPetals: $shouldGrowPetals,
+                    shouldDropAllPetals: $shouldDropAllPetals
+                )
+                .edgesIgnoringSafeArea(.all)
+            }
 
             // UI overlays
             if !isSessionActive {
