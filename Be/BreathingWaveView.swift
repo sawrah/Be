@@ -7,10 +7,13 @@ struct BreathingWaveView: View {
     let exhaleDuration: Double
     let phase: BreathingPhase
 
-    private let amplitude: CGFloat = 56.0
-    private let pointsPerSecond: CGFloat = 30.0
-    private let dotRadius: CGFloat = 8.0
-    private let strokeWidth: CGFloat = 8.0
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    private var padScale: CGFloat { isPad ? 1.3 : 1.0 }
+
+    private var amplitude: CGFloat { 56.0 * padScale }
+    private var pointsPerSecond: CGFloat { 30.0 * padScale }
+    private var dotRadius: CGFloat { 8.0 * padScale }
+    private var strokeWidth: CGFloat { 8.0 * padScale }
     private let timeStep: Double = 0.05
 
     var body: some View {

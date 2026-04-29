@@ -52,6 +52,62 @@ struct ConfettiView: View {
     }
 }
 
+// MARK: - Exhale Edge Hint
+
+struct ExhaleEdgeHintView: View {
+    let exhaleDuration: Double
+    let phaseElapsed: Double
+
+    @State private var opacity: Double = 0
+    @State private var arrowOffset: CGFloat = 0
+    @State private var isFadingOut = false
+
+    private let lavender = Color(red: 180/255, green: 150/255, blue: 255/255)
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(lavender)
+                .frame(height: 6)
+                .shadow(color: lavender.opacity(0.9), radius: 10, y: 3)
+                .shadow(color: lavender.opacity(0.5), radius: 20, y: 6)
+
+            VStack(spacing: 6) {
+                Image(systemName: "chevron.up")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(lavender)
+                    .shadow(color: lavender.opacity(0.6), radius: 4)
+                    .offset(y: arrowOffset)
+                    .padding(.top, 10)
+
+                Text("exhale to the top edge")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(lavender.opacity(0.9))
+                    .tracking(0.3)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .opacity(opacity)
+        .onAppear {
+            withAnimation(.easeIn(duration: 0.4)) {
+                opacity = 0.85
+            }
+            withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+                arrowOffset = -5
+            }
+        }
+        .onChange(of: phaseElapsed) { elapsed in
+            guard !isFadingOut else { return }
+            if elapsed >= exhaleDuration - 0.4 {
+                isFadingOut = true
+                withAnimation(.easeOut(duration: 0.4)) {
+                    opacity = 0
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Breathing Session View
 
 struct BreathingSessionView: View {
@@ -76,6 +132,9 @@ struct BreathingSessionView: View {
 
     @State private var inhaleCount = 0
     @State private var exhaleCount = 0
+
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    private var padScale: CGFloat { isPad ? 1.3 : 1.0 }
 
     var body: some View {
         ZStack {
@@ -133,13 +192,13 @@ struct BreathingSessionView: View {
             if showSurfaceNotFound {
                 VStack {
                     Text(surfaceNotFoundAttempts == 1 
-                        ? "Move your phone slowly to scan the room" 
+                        ? "Move your device slowly to scan the room" 
                         : "Point out a flat surface like a table or floor")
-                        .font(.body.weight(.semibold))
+                        .font(.system(size: 17 * padScale, weight: .semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 80)
+                        .padding(.horizontal, 24 * padScale)
+                        .padding(.top, 80 * padScale)
                     Spacer()
                 }
                 .transition(.opacity)
@@ -150,10 +209,10 @@ struct BreathingSessionView: View {
                 VStack {
                     Spacer()
                     Text("Try to blow the petals!")
-                        .font(.body.weight(.semibold))
+                        .font(.system(size: 17 * padScale, weight: .semibold))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 160)
+                        .padding(.horizontal, 24 * padScale)
+                        .padding(.bottom, 160 * padScale)
                 }
                 .transition(.opacity.combined(with: .scale))
                 .animation(.easeInOut(duration: 6), value: sessionManager.showBlowHint)
@@ -162,6 +221,19 @@ struct BreathingSessionView: View {
             // Confetti overlay
             if showConfetti {
                 ConfettiView()
+            }
+
+            // Exhale edge hint — behind close button
+            if isSessionActive && sessionManager.phase == .exhale {
+                VStack {
+                    ExhaleEdgeHintView(
+                        exhaleDuration: sessionManager.exhaleDuration,
+                        phaseElapsed: sessionManager.phaseElapsed
+                    )
+                    Spacer()
+                }
+                .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
             }
 
             // Back / cancel button — top-left, always visible
@@ -177,14 +249,14 @@ struct BreathingSessionView: View {
                             }
                         } label: {
                             Image(systemName: "xmark")
-                                .font(.system(size: 17, weight: .semibold))
+                                .font(.system(size: 17 * padScale, weight: .semibold))
                                 .foregroundStyle(.white)
-                                .frame(width: 44, height: 44)
+                                .frame(width: 44 * padScale, height: 44 * padScale)
                                 .glassEffect(.regular.interactive(), in: .circle)
                         }
                         .environment(\.colorScheme, .dark)
-                        .padding(.leading, 20)
-                        .padding(.top, 56)
+                        .padding(.leading, 20 * padScale)
+                        .padding(.top, 56 * padScale)
                         Spacer()
                     }
                     Spacer()
@@ -268,22 +340,22 @@ struct BreathingSessionView: View {
 
             if !isFlowerPlaced {
                 VStack(spacing: 0) {
-                    PlacementAnimation(fileName: "animationTap")
+                    PlacementAnimation(fileName: "animationTap", size: 80 * padScale)
                         .scaleEffect(1.2)
                         .shadow(color: .white.opacity(0.2), radius: 8)
-                        .offset(y: 5)
+                        .offset(y: 5 * padScale)
 
                     Text("Place the flower on a flat surface")
-                        .font(.body.weight(.semibold))
+                        .font(.system(size: 17 * padScale, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 15)
+                .padding(.horizontal, 24 * padScale)
+                .padding(.vertical, 15 * padScale)
                 .background(.ultraThinMaterial)
                 .environment(\.colorScheme, .dark)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(RoundedRectangle(cornerRadius: 16 * padScale))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: 16 * padScale)
                         .strokeBorder(
                             LinearGradient(
                                 colors: [.white.opacity(0.3), .white.opacity(0.1)],
@@ -300,17 +372,17 @@ struct BreathingSessionView: View {
                     startSession()
                 } label: {
                     Text("Start Session")
-                        .font(.body.weight(.semibold))
+                        .font(.system(size: 17 * padScale, weight: .semibold))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 40)
-                        .padding(.vertical, 18)
+                        .padding(.horizontal, 40 * padScale)
+                        .padding(.vertical, 18 * padScale)
                         .glassEffect(.regular.tint(Color("BrandGreen")).interactive(), in: .capsule)
                 }
                 .environment(\.colorScheme, .dark)
                 .transition(.scale.combined(with: .opacity))
             }
         }
-        .padding(.bottom, 50)
+        .padding(.bottom, 50 * padScale)
         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isFlowerPlaced)
     }
 
@@ -319,12 +391,12 @@ struct BreathingSessionView: View {
     private var activeSessionOverlay: some View {
         VStack {
             phaseMonitorView
-                .padding(.top, 60)
+                .padding(.top, 60 * padScale)
 
             Spacer()
 
             globalControlView
-                .padding(.bottom, 50)
+                .padding(.bottom, 50 * padScale)
         }
     }
 
@@ -345,24 +417,24 @@ struct BreathingSessionView: View {
                 phase: sessionManager.phase
             )
         }
-        .padding(.vertical, 20)
+        .padding(.vertical, 20 * padScale)
     }
 
     private var globalControlView: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 10 * padScale) {
             Button {
                 sessionManager.togglePause()
             } label: {
                 Image(systemName: sessionManager.isPaused ? "play.fill" : "pause.fill")
-                    .font(.title)
+                    .font(.system(size: 28 * padScale))
                     .foregroundStyle(.white)
-                    .frame(width: 64, height: 64)
+                    .frame(width: 64 * padScale, height: 64 * padScale)
                     .glassEffect(.regular.tint(Color("BrandGreen")).interactive(), in: .circle)
             }
             .environment(\.colorScheme, .dark)
 
             Text(sessionManager.globalTimerText)
-                .font(.system(.subheadline, design: .monospaced).weight(.semibold))
+                .font(.system(size: 15 * padScale, weight: .semibold, design: .monospaced))
                 .foregroundStyle(.white)
         }
     }
@@ -378,42 +450,42 @@ struct BreathingSessionView: View {
             // Animation Centered
             SinglePlayAnimation(
                 fileName: "breathing-successful", 
-                size: 300,
+                size: 300 * padScale,
                 segments: (0, 89)
             )
             .shadow(color: Color("BrandGreen").opacity(0.3), radius: 20)
-            .offset(y: -50) // Shift slightly up to balance with bottom text
+            .offset(y: -50 * padScale) // Shift slightly up to balance with bottom text
             
             VStack {
                 Spacer()
                 
                 // Grouped Text and Button at the bottom
-                VStack(spacing: 12) {
+                VStack(spacing: 12 * padScale) {
                     Text("You did it!")
-                        .font(.system(size: 36, weight: .bold, design: .serif))
+                        .font(.system(size: 36 * padScale, weight: .bold, design: .serif))
                         .foregroundStyle(.white)
                     
                     Text("Now you can plant this flower in your digital garden")
-                        .font(.body.weight(.medium))
+                        .font(.system(size: 17 * padScale, weight: .medium))
                         .foregroundStyle(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
-                        .lineSpacing(4)
+                        .padding(.horizontal, 40 * padScale)
+                        .lineSpacing(4 * padScale)
                 }
-                .padding(.bottom, 25)
+                .padding(.bottom, 25 * padScale)
                 
                 Button {
                     addToGarden()
                 } label: {
                     Text("Add to Garden")
-                        .font(.body.weight(.semibold))
+                        .font(.system(size: 17 * padScale, weight: .semibold))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 44)
-                        .padding(.vertical, 18)
+                        .padding(.horizontal, 44 * padScale)
+                        .padding(.vertical, 18 * padScale)
                         .glassEffect(.regular.tint(Color("BrandGreen")).interactive(), in: .capsule)
                 }
                 .environment(\.colorScheme, .dark)
-                .padding(.bottom, 60)
+                .padding(.bottom, 60 * padScale)
             }
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }

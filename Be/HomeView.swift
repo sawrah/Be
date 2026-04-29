@@ -16,6 +16,9 @@ struct HomeView: View {
     private let gregorian = Calendar(identifier: .gregorian)
     private var selectedMonth: Int { gregorian.component(.month, from: selectedDate) }
     private var selectedYear: Int { gregorian.component(.year, from: selectedDate) }
+    
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    private var padScale: CGFloat { isPad ? 1.3 : 1.0 }
 
     private static let monthNames = [
         "January", "February", "March", "April", "May", "June",
@@ -69,14 +72,14 @@ struct HomeView: View {
                         HStack {
                             // Left spacer to balance the menu button
                             Spacer()
-                                .frame(width: 48) // Matches the menu button width
+                                .frame(width: 48 * padScale) // Matches the menu button width
                             
                             Spacer()
                             
                             Image("Logo")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(height: 50)
+                                .frame(height: 70 * padScale)
                             
                             Spacer()
                             
@@ -91,29 +94,29 @@ struct HomeView: View {
                                 }
                             } label: {
                                 Image(systemName: "person.fill")
-                                    .font(.system(size: 24))
+                                    .font(.system(size: 24 * padScale))
                                     .foregroundColor(.white)
-                                    .frame(width: 48) // Fixed width for centering
+                                    .frame(width: 48 * padScale) // Fixed width for centering
                             }
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 4)
+                        .padding(.horizontal, 24 * padScale)
+                        .padding(.top, 4 * padScale)
                         
                         Spacer()
-                            .frame(height: 30)
+                            .frame(height: 30 * padScale)
                         
                         // Start Breathing button — liquid glass
                         Button {
                             showBreathingSession = true
                         } label: {
-                            VStack(spacing: 12) {
+                            VStack(spacing: 12 * padScale) {
                                 Image(systemName: "wind")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 32 * padScale, weight: .light))
                                 Text("Start Breathing")
-                                    .font(.headline)
+                                    .font(.system(size: 17 * padScale, weight: .semibold))
                             }
                             .foregroundStyle(.white)
-                            .frame(width: 180, height: 180)
+                            .frame(width: 180 * padScale, height: 180 * padScale)
                             .glassEffect(
                                 .regular.tint(Color("BrandGreen")).interactive(),
                                 in: .circle
@@ -122,81 +125,82 @@ struct HomeView: View {
                         .environment(\.colorScheme, .dark)
                         
                         Spacer()
-                            .frame(height: 40)
+                            .frame(height: 40 * padScale)
                         
                         // Insights Row
                         HStack(spacing: 0) {
-                            VStack(spacing: 4) {
+                            VStack(spacing: 4 * padScale) {
                                 Text("\(totalFlowers)")
-                                    .font(.system(.headline, design: .serif).weight(.regular))
+                                    .font(.system(size: 17 * padScale, weight: .regular, design: .serif))
                                     .foregroundColor(.black)
                                 Text("Flowers Planted")
-                                    .font(.footnote)
+                                    .font(.system(size: 13 * padScale))
                                     .foregroundColor(.black.opacity(0.6))
                             }
                             .frame(maxWidth: .infinity)
                             
-                            VStack(spacing: 4) {
+                            VStack(spacing: 4 * padScale) {
                                 Text("\(totalMinutes)m")
-                                    .font(.system(.headline, design: .serif).weight(.regular))
+                                    .font(.system(size: 17 * padScale, weight: .regular, design: .serif))
                                     .foregroundColor(.black)
                                 Text("Calm Minutes")
-                                    .font(.footnote)
+                                    .font(.system(size: 13 * padScale))
                                     .foregroundColor(.black.opacity(0.6))
                             }
                             .frame(maxWidth: .infinity)
                             
-                            VStack(spacing: 4) {
+                            VStack(spacing: 4 * padScale) {
                                 Text("\(streak)")
-                                    .font(.system(.headline, design: .serif).weight(.regular))
+                                    .font(.system(size: 17 * padScale, weight: .regular, design: .serif))
                                     .foregroundColor(.black)
                                 Text("Day Streak")
-                                    .font(.footnote)
+                                    .font(.system(size: 13 * padScale))
                                     .foregroundColor(.black.opacity(0.6))
                             }
                             .frame(maxWidth: .infinity)
                         }
-                        .padding(.vertical, 20)
+                        .padding(.vertical, 20 * padScale)
                         .background(Color(hex: "#F8F5F2"))
-                        .cornerRadius(12)
+                        .cornerRadius(12 * padScale)
                         .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, 24 * padScale)
                         
                         Spacer()
-                            .frame(height: 30)
+                            .frame(height: 30 * padScale)
                         
                         // Month Picker Row
-                        HStack(spacing: 40) {
+                        HStack(spacing: 40 * padScale) {
                             Button(action: { shiftMonth(by: -1) }) {
                                 Image(systemName: "chevron.left")
-                                    .font(.system(size: 20, weight: .semibold))
+                                    .font(.system(size: 20 * padScale, weight: .semibold))
                                     .foregroundColor(.black)
                             }
                             
                             Button(action: {
-                                showMonthPicker = true
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    showMonthPicker = true
+                                }
                             }) {
                                 ZStack {
                                     Capsule()
                                         .fill(Color("Surface").opacity(0.8))
-                                        .frame(width: 140, height: 36)
+                                        .frame(width: 140 * padScale, height: 36 * padScale)
                                     
                                     Text("\(selectedMonthName) \(String(selectedYear))")
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
+                                        .font(.system(size: 15 * padScale, weight: .medium))
                                         .foregroundColor(.black)
                                 }
                             }
                             
                             Button(action: { shiftMonth(by: 1) }) {
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 20, weight: .semibold))
+                                    .font(.system(size: 20 * padScale, weight: .semibold))
                                     .foregroundColor(.black)
                             }
                         }
                         
                         Spacer()
-                            .frame(height: 24)
+                            .frame(height: 40 * padScale)
                         
                         // Garden — Color.clear gives scrollTo an anchor without affecting layout
                         Color.clear.frame(height: 0).id("gardenSection")
@@ -211,16 +215,18 @@ struct HomeView: View {
                             onSwipe: { delta in shiftMonth(by: delta) }
                         )
                         .id("\(selectedMonth)-\(selectedYear)")
+                        .scaleEffect(padScale)
+                        .frame(width: 340.5 * padScale, height: 402.1 * padScale)
                         
                         if isPlantingMode {
                             Text("Tap a tile to plant your flower")
-                                .font(.footnote)
+                                .font(.system(size: 13 * padScale))
                                 .foregroundColor(.secondary)
-                                .padding(.top, 8)
+                                .padding(.top, 8 * padScale)
                         }
                         
                         Spacer()
-                            .frame(height: 40)
+                            .frame(height: 40 * padScale)
                     }
                     .onChange(of: isPlantingMode) { newValue in
                         if newValue {
@@ -245,10 +251,37 @@ struct HomeView: View {
                     isPlantingMode = true
                 })
             }
-            .sheet(isPresented: $showMonthPicker) {
-                MonthPickerView(selectedDate: $selectedDate, isPresented: $showMonthPicker)
-                    .presentationDetents([.height(250)])
-                    .presentationDragIndicator(.visible)
+            
+            if showMonthPicker {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            showMonthPicker = false
+                        }
+                    }
+                    .zIndex(1)
+                
+                VStack {
+                    Spacer()
+                    VStack(spacing: 0) {
+                        Capsule()
+                            .fill(Color.gray.opacity(0.4))
+                            .frame(width: 40 * padScale, height: 5 * padScale)
+                            .padding(.top, 12 * padScale)
+                        
+                        MonthPickerView(selectedDate: $selectedDate, isPresented: $showMonthPicker)
+                            .padding(.bottom, isPad ? 0 : 30)
+                    }
+                    .frame(maxWidth: isPad ? 400 * padScale : .infinity)
+                    .background(Color("Surface"))
+                    .cornerRadius(24 * padScale)
+                    .padding(.bottom, isPad ? 20 * padScale : 0)
+                    .shadow(color: .black.opacity(0.15), radius: 20, y: 10)
+                }
+                .ignoresSafeArea(edges: .bottom)
+                .transition(.move(edge: .bottom))
+                .zIndex(2)
             }
         }
     }
@@ -272,6 +305,9 @@ struct MonthPickerView: View {
                           "July", "August", "September", "October", "November", "December"]
     private let years: [Int]
 
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    private var padScale: CGFloat { isPad ? 1.5 : 1.0 }
+
     init(selectedDate: Binding<Date>, isPresented: Binding<Bool>) {
         self._selectedDate = selectedDate
         self._isPresented = isPresented
@@ -287,10 +323,10 @@ struct MonthPickerView: View {
     }
     
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 10 * padScale) {
             Text("Select Month")
-                .font(.headline)
-                .padding(.top, 20)
+                .font(.system(size: 17 * padScale, weight: .semibold))
+                .padding(.top, 10 * padScale)
             
             HStack(spacing: 0) {
                 // Month Picker
@@ -313,15 +349,21 @@ struct MonthPickerView: View {
                 .pickerStyle(.wheel)
                 .frame(width: 100)
             }
-            .frame(height: 160)
+            .scaleEffect(padScale)
+            .frame(width: 250 * padScale, height: 160 * padScale)
             
             Button("Done") {
-                updateDate()
-                isPresented = false
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    updateDate()
+                    isPresented = false
+                }
             }
+            .font(.system(size: 17 * padScale, weight: .semibold))
             .buttonStyle(.borderedProminent)
             .tint(Color("BrandGreen"))
+            .padding(.bottom, 20 * padScale)
         }
+        .padding(.horizontal, 20 * padScale)
     }
     
     private func updateDate() {
