@@ -11,16 +11,19 @@ struct PhaseLabelView: View {
         phase == .inhale ? inhaleDuration : exhaleDuration
     }
 
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    private var padScale: CGFloat { isPad ? 1.3 : 1.0 }
+
     var body: some View {
         ZStack {
             // dim base
             Text(phase == .inhale ? "Inhale" : "Exhale")
-                .font(.system(size:48, design: .serif).weight(.semibold))
+                .font(.system(size: 48 * padScale, design: .serif).weight(.semibold))
                 .foregroundStyle(.white.opacity(0.5))
 
             // bright masked overlay
             Text(phase == .inhale ? "Inhale" : "Exhale")
-                .font(.system(size:48, design: .serif).weight(.semibold))
+                .font(.system(size: 48 * padScale, design: .serif).weight(.semibold))
                 .foregroundStyle(.white)
                 .mask(
                     Group {

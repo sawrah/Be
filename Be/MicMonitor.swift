@@ -62,7 +62,7 @@ class MicMonitor: ObservableObject {
                     self.soundLevel = level
                     
                     let wasBlowing = self.isBlowing
-                    let isNowBlowing = level > -30.0
+                    let isNowBlowing = level > -40.0
                     
                     self.isBlowing = isNowBlowing
                     

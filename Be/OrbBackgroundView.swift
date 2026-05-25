@@ -30,7 +30,6 @@ struct OrbBackgroundView: View {
             ZStack {
                 
                 
-                // AccentColor (coral) — top-left, bleeds off top & left edges
                 Circle()
                     .fill(Color("Accent"))
                     .frame(width: w * 0.9, height: w * 0.9)

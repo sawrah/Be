@@ -52,62 +52,6 @@ struct ConfettiView: View {
     }
 }
 
-// MARK: - Exhale Edge Hint
-
-struct ExhaleEdgeHintView: View {
-    let exhaleDuration: Double
-    let phaseElapsed: Double
-
-    @State private var opacity: Double = 0
-    @State private var arrowOffset: CGFloat = 0
-    @State private var isFadingOut = false
-
-    private let lavender = Color(red: 180/255, green: 150/255, blue: 255/255)
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Rectangle()
-                .fill(lavender)
-                .frame(height: 6)
-                .shadow(color: lavender.opacity(0.9), radius: 10, y: 3)
-                .shadow(color: lavender.opacity(0.5), radius: 20, y: 6)
-
-            VStack(spacing: 6) {
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(lavender)
-                    .shadow(color: lavender.opacity(0.6), radius: 4)
-                    .offset(y: arrowOffset)
-                    .padding(.top, 10)
-
-                Text("exhale to the top edge")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(lavender.opacity(0.9))
-                    .tracking(0.3)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .opacity(opacity)
-        .onAppear {
-            withAnimation(.easeIn(duration: 0.4)) {
-                opacity = 0.85
-            }
-            withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
-                arrowOffset = -5
-            }
-        }
-        .onChange(of: phaseElapsed) { elapsed in
-            guard !isFadingOut else { return }
-            if elapsed >= exhaleDuration - 0.4 {
-                isFadingOut = true
-                withAnimation(.easeOut(duration: 0.4)) {
-                    opacity = 0
-                }
-            }
-        }
-    }
-}
-
 // MARK: - Breathing Session View
 
 struct BreathingSessionView: View {
@@ -130,8 +74,6 @@ struct BreathingSessionView: View {
     @StateObject private var micMonitor = MicMonitor()
     @StateObject private var sessionManager = BreathingSessionManager()
 
-    @State private var inhaleCount = 0
-    @State private var exhaleCount = 0
 
     private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
     private var padScale: CGFloat { isPad ? 1.3 : 1.0 }
@@ -223,19 +165,6 @@ struct BreathingSessionView: View {
                 ConfettiView()
             }
 
-            // Exhale edge hint — behind close button
-            if isSessionActive && sessionManager.phase == .exhale {
-                VStack {
-                    ExhaleEdgeHintView(
-                        exhaleDuration: sessionManager.exhaleDuration,
-                        phaseElapsed: sessionManager.phaseElapsed
-                    )
-                    Spacer()
-                }
-                .ignoresSafeArea(edges: .top)
-                .allowsHitTesting(false)
-            }
-
             // Back / cancel button — top-left, always visible
             if sessionManager.phase != .finished {
                 VStack {
@@ -286,8 +215,6 @@ struct BreathingSessionView: View {
         } message: {
             Text("Your progress won't be saved.")
         }
-        .sensoryFeedback(.impact(weight: .heavy, intensity: 1.0), trigger: inhaleCount)
-        .sensoryFeedback(.impact(weight: .heavy, intensity: 1.0), trigger: exhaleCount)
         .onChange(of: micMonitor.isBlowing) { newValue in
             guard isSessionActive,
                   sessionManager.phase == .exhale,
@@ -302,22 +229,24 @@ struct BreathingSessionView: View {
             switch newPhase {
             case .exhale:
                 micMonitor.startMonitoring()
-                exhaleCount += 1
+                triggerIntenseHaptic()
             case .inhale:
                 micMonitor.stopMonitoring()
-                inhaleCount += 1
-                
+                shouldDropPetals = false
+                triggerIntenseHaptic()
+
                 // Only force-drop remaining petals and regrow if this is NOT the very first inhale
                 if sessionManager.globalSecondsRemaining < sessionManager.totalSessionSeconds {
                     shouldDropAllPetals = true
                     shouldGrowPetals = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { 
-                        shouldDropAllPetals = false 
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        shouldDropAllPetals = false
                         shouldGrowPetals = false
                     }
                 }
             case .finished:
                 micMonitor.stopMonitoring()
+                shouldDropPetals = false
                 showConfetti = true
             default:
                 break
@@ -326,6 +255,7 @@ struct BreathingSessionView: View {
         .onChange(of: sessionManager.isPaused) { paused in
             if paused {
                 micMonitor.stopMonitoring()
+                shouldDropPetals = false
             } else if sessionManager.phase == .exhale {
                 micMonitor.startMonitoring()
             }
@@ -492,6 +422,15 @@ struct BreathingSessionView: View {
     }
 
     // MARK: - Actions
+
+    private func triggerIntenseHaptic() {
+        let generator = UIImpactFeedbackGenerator(style: .heavy)
+        generator.prepare()
+        generator.impactOccurred(intensity: 1.0)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            generator.impactOccurred(intensity: 1.0)
+        }
+    }
 
     private func startSession() {
         withAnimation(.easeIn(duration: 0.4)) {
